@@ -9,11 +9,13 @@ public class MyGame extends Game {
 	BitmapFont font;
 	GameScreen gameScreen;
 	MainMenuScreen mainMenuScreen;
+	SpaceScreen spaceScreen;
 
 	@Override
 	public void create () {
-		gameScreen = new GameScreen(this);
 		mainMenuScreen = new MainMenuScreen(this);
+		gameScreen = new GameScreen(this);
+		spaceScreen = new SpaceScreen(this);
 		batch = new SpriteBatch();
 		font = new BitmapFont();
 
