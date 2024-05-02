@@ -20,6 +20,8 @@ public class SpaceScreen implements Screen {
 
     float MAX_SPEED = 500;
     Vector2 shipPos;
+    Vector2 shipVel;
+    float STEERING_FACTOR = 5;
 
     public SpaceScreen(MyGame game) {
         this.game = game;
@@ -29,6 +31,7 @@ public class SpaceScreen implements Screen {
         bgColor = Color.valueOf("1C3D6E");
         shipTex = new TextureRegion(new Texture(Gdx.files.internal("ship_L.png")));
         shipPos = new Vector2();
+        shipVel = new Vector2();
     }
 
     @Override
@@ -40,25 +43,41 @@ public class SpaceScreen implements Screen {
     public void render(float v) {
         camera.update();
 
-        Vector2 velocity = new Vector2();
+        Vector2 dir = new Vector2();
 
         if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
-           velocity.add(0, 1);
+            dir.add(0, 1);
         }
+
         if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-            velocity.add(0, -1);
+            dir.add(0, -1);
         }
+
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-            velocity.add(-1, 0);
+            dir.add(-1, 0);
         }
+
         if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-            velocity.add(1, 0);
+            dir.add(1, 0);
         }
 
-        velocity.scl(MAX_SPEED * Gdx.graphics.getDeltaTime());
+        dir.nor();
 
-        float rotationRad = MathUtils.atan2(velocity.y, velocity.x); // rad
-        shipPos.add(velocity);
+        Vector2 desiredVelocity = new Vector2();
+        desiredVelocity.set(dir);
+        desiredVelocity.scl(MAX_SPEED);
+
+        Vector2 steeringVector = new Vector2();
+        steeringVector.set(desiredVelocity).sub(shipVel);
+        steeringVector.scl(Gdx.graphics.getDeltaTime());
+        steeringVector.scl(STEERING_FACTOR);
+        shipVel.add(steeringVector);
+
+        Vector2 shipVelDelta = new Vector2();
+        shipVelDelta.set(shipVel).scl(Gdx.graphics.getDeltaTime());
+
+        float rotationRad = MathUtils.atan2(shipVelDelta.y, shipVelDelta.x); // rad
+        shipPos.add(shipVelDelta);
 
         ScreenUtils.clear(bgColor);
 
