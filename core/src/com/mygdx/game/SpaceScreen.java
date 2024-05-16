@@ -13,7 +13,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 
 public class SpaceScreen implements Screen {
     MyGame game;
-
+//Test
     OrthographicCamera camera;
     TextureRegion shipTex;
     Color bgColor;
@@ -45,19 +45,19 @@ public class SpaceScreen implements Screen {
 
         Vector2 dir = new Vector2();
 
-        if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
+        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
             dir.add(0, 1);
         }
 
-        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+        if (Gdx.input.isKeyPressed(Input.Keys.S)) {
             dir.add(0, -1);
         }
 
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
             dir.add(-1, 0);
         }
 
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+        if (Gdx.input.isKeyPressed(Input.Keys.D)) {
             dir.add(1, 0);
         }
 
