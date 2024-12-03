@@ -10,15 +10,18 @@ public class MyGame extends Game {
 	GameScreen gameScreen;
 	MainMenuScreen mainMenuScreen;
 	SpaceScreen spaceScreen;
+	ChickenScreen chickenScreen;
+	ChickenMenu chickenMenu;
 
 	@Override
 	public void create () {
 		mainMenuScreen = new MainMenuScreen(this);
 		gameScreen = new GameScreen(this);
 		spaceScreen = new SpaceScreen(this);
+		chickenScreen = new ChickenScreen(this);
+		chickenMenu = new ChickenMenu(this);
 		batch = new SpriteBatch();
 		font = new BitmapFont();
-
 		setScreen(mainMenuScreen);
 	}
 

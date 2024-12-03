@@ -19,6 +19,7 @@ public class GameScreen implements Screen {
     OrthographicCamera camera;
     Texture dropPng;
     Texture bucketPng;
+    Texture backgroundPng;
 
     Rectangle bucketRect;
     Array<Rectangle> dropletRects;
@@ -38,6 +39,7 @@ public class GameScreen implements Screen {
 
         bucketPng = new Texture("bucket.png");
         dropPng = new Texture("drop.png");
+        backgroundPng = new Texture("Background1.png");
 
         bucketRect = new Rectangle(
                 (Gdx.graphics.getWidth() / 2.f) - (bucketPng.getWidth() / 2.0f), 20,
@@ -62,11 +64,17 @@ public class GameScreen implements Screen {
         // draw
         camera.update();
 
+        if (Gdx.input.isKeyPressed(Input.Keys.ESCAPE)){
+            game.setScreen(game.mainMenuScreen);
+        }
+
         SpriteBatch batch = game.batch;
         ScreenUtils.clear(0.1f, 0.1f, 0.5f, 1);
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
+        batch.draw(backgroundPng, 0, -200);
         batch.draw(bucketPng, bucketRect.x, bucketRect.y);
+
         for (Rectangle dropletRect : dropletRects) {
             batch.draw(dropPng, dropletRect.x, dropletRect.y);
         }
@@ -80,8 +88,8 @@ public class GameScreen implements Screen {
         batch.end();
 
         // game logic
-        boolean left = Gdx.input.isKeyPressed(Input.Keys.LEFT);
-        boolean right = Gdx.input.isKeyPressed(Input.Keys.RIGHT);
+        boolean left = Gdx.input.isKeyPressed(Input.Keys.A);
+        boolean right = Gdx.input.isKeyPressed(Input.Keys.D);
         if (left) {
             bucketRect.x -= (bucketSpeed * Gdx.graphics.getDeltaTime()); // how much time it took to render last frame
         } else if (right) {

@@ -6,116 +6,151 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 
-public class SpaceScreen implements Screen {
-    MyGame game;
-//Test
-    OrthographicCamera camera;
-    TextureRegion shipTex;
-    Color bgColor;
+import java.util.Iterator;
 
-    float MAX_SPEED = 500;
-    Vector2 shipPos;
-    Vector2 shipVel;
-    float STEERING_FACTOR = 5;
+public class SpaceScreen implements Screen {
+    private MyGame game;
+    private OrthographicCamera camera;
+    private Ship ship;
+    private Projectile projectile;
+    private TextureRegion meteorTexture; // Texture for meteors
+    private FireParticle fireParticle;
+    private TextureRegion projectileTexture; // Texture for projectiles
+    private Color bgColor;
+
+    private Array<Meteor> meteors; // List to keep track of meteors
+    private float meteorSpawnTimer; // Timer to control meteor spawning
+    private final int maxMeteors = 40; // Maximum number of meteors
 
     public SpaceScreen(MyGame game) {
         this.game = game;
-
         camera = new OrthographicCamera();
         camera.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         bgColor = Color.valueOf("1C3D6E");
-        shipTex = new TextureRegion(new Texture(Gdx.files.internal("ship_L.png")));
-        shipPos = new Vector2();
-        shipVel = new Vector2();
+
+        ship = new Ship(new TextureRegion(new Texture(Gdx.files.internal("ship_L.png"))), 5f, 500f);
+
+        // Meteor texture and array initialization
+        meteorTexture = new TextureRegion(new Texture(Gdx.files.internal("meteor_squareDetailedLarge.png")));
+        meteors = new Array<>();
+
+        fireParticle = new FireParticle(ship);
+
+        projectileTexture = new TextureRegion(new Texture(Gdx.files.internal("star_tiny.png")));
+
+        meteorSpawnTimer = 0f; // Initialize spawn timer
     }
 
     @Override
-    public void show() {
-
-    }
+    public void show() {}
 
     @Override
-    public void render(float v) {
+    public void render(float delta) {
         camera.update();
+        camera.position.x = ship.getPosition().x;
+        camera.position.y = ship.getPosition().y;
 
-        Vector2 dir = new Vector2();
+        ship.update();
 
-        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-            dir.add(0, 1);
+        // Check for shooting input
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE ) || Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+            ship.shoot(projectileTexture, 600f);
         }
-
-        if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-            dir.add(0, -1);
-        }
-
-        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-            dir.add(-1, 0);
-        }
-
-        if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-            dir.add(1, 0);
-        }
-
-        dir.nor();
-
-        Vector2 desiredVelocity = new Vector2();
-        desiredVelocity.set(dir);
-        desiredVelocity.scl(MAX_SPEED);
-
-        Vector2 steeringVector = new Vector2();
-        steeringVector.set(desiredVelocity).sub(shipVel);
-        steeringVector.scl(Gdx.graphics.getDeltaTime());
-        steeringVector.scl(STEERING_FACTOR);
-        shipVel.add(steeringVector);
-
-        Vector2 shipVelDelta = new Vector2();
-        shipVelDelta.set(shipVel).scl(Gdx.graphics.getDeltaTime());
-
-        float rotationRad = MathUtils.atan2(shipVelDelta.y, shipVelDelta.x); // rad
-        shipPos.add(shipVelDelta);
 
         ScreenUtils.clear(bgColor);
+        fireParticle.update();
+
+        // Spawn meteors at regular intervals
+        meteorSpawnTimer += delta;
+        if (meteorSpawnTimer >= 1f) { // Spawn meteor every 1 second
+            spawnMeteor();
+            meteorSpawnTimer = 0f;
+        }
+
+        // Check for collisions and update meteors
+        Iterator<Meteor> meteorIterator = meteors.iterator();
+        while (meteorIterator.hasNext()) {
+            Meteor meteor = meteorIterator.next();
+
+            // Remove meteor if it collides with the ship
+            if (ship.getHitbox().overlaps(meteor.getHitbox())) {
+                meteor.destroy();
+                meteorIterator.remove();
+                continue;
+            }
+
+            // Update meteor and remove if destroyed
+            if (meteor.isDestroyed()) {
+                meteorIterator.remove();
+            }
+        }
 
         game.batch.setProjectionMatrix(camera.combined);
         game.batch.begin();
-        game.batch.draw(
-            shipTex,
-            shipPos.x, shipPos.y,
-            shipTex.getRegionWidth() / 2.f, shipTex.getRegionHeight() / 2.f,
-            shipTex.getRegionWidth(), shipTex.getRegionHeight(),
-            1.0f, 1.0f,
-            MathUtils.radiansToDegrees * rotationRad
-        );
+
+        // Draw meteors
+        for (Meteor meteor : meteors) {
+            game.batch.draw(meteor.getTexture(), meteor.getHitbox().x, meteor.getHitbox().y);
+        }
+
+        // Draw the ship
+        ship.draw(game.batch);
+
+        // Draw projectiles
+        Iterator<Projectile> iterator = ship.getProjectiles().iterator();
+        while (iterator.hasNext()) {
+            Projectile projectile = iterator.next();
+            game.batch.draw(
+                    projectile.getTexture(),
+                    projectile.getPosition().x, projectile.getPosition().y,
+                    projectile.getTexture().getRegionWidth() / 2f, projectile.getTexture().getRegionHeight() / 2f,
+                    projectile.getTexture().getRegionWidth(), projectile.getTexture().getRegionHeight(),
+                    1.0f, 1.0f,
+                    MathUtils.radiansToDegrees * ship.getRotationRad()
+            );
+        }
+
+        fireParticle.draw(game.batch);
         game.batch.end();
     }
 
-    @Override
-    public void resize(int i, int i1) {
+    // Method to spawn meteors
+    private void spawnMeteor() {
+        if (meteors.size >= maxMeteors) {
+            // Remove the oldest meteor if the limit is reached
+            meteors.removeIndex(0);
+        }
 
+        // Random spawn position around the ship within a 5000x5000 square
+        float spawnX = ship.getPosition().x + MathUtils.random(-2500, 2500);
+        float spawnY = ship.getPosition().y + MathUtils.random(-2500, 2500);
+
+        // Create and add a new meteor
+        Meteor newMeteor = new Meteor(meteorTexture, spawnX, spawnY);
+        meteors.add(newMeteor);
     }
 
     @Override
-    public void pause() {
-
-    }
+    public void resize(int i, int i1) {}
 
     @Override
-    public void resume() {
-
-    }
+    public void pause() {}
 
     @Override
-    public void hide() {
+    public void resume() {}
 
-    }
+    @Override
+    public void hide() {}
 
     @Override
     public void dispose() {
 
     }
+
 }
